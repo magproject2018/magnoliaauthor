@@ -7,4 +7,4 @@ This project uses vagrant to build a Magnolia CMS author instance vm in VirtualB
 3. Install Vagrant
 4. From your command line, cd to your cloned repo, and enter
     vagrant up
-5. When it's finished, you should be able to browse to http://192.168.99.41/ to access Magnolia
+5. When it's finished, you should be able to browse to http://192.168.99.40/ to access Magnolia
