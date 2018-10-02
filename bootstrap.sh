@@ -69,29 +69,29 @@ sudo npm install -y @magnolia/cli -g
 echo -e "-----------------------------------------------------------------------"
 echo -e "-- Jumpstarting Magnolia"
 echo -e "-----------------------------------------------------------------------"
-cd /opt
-sudo mkdir magnolia
+sudo mkdir /opt/magnolia
+cd /opt/magnolia
 sudo mgnl jumpstart -w magnolia-community-webapp
 
 echo -e "-----------------------------------------------------------------------"
 echo -e "-- Preparing Magnolia for MySQL Jackrabbit JCR persistence"
 echo -e "-----------------------------------------------------------------------"
 
-sudo rm -rf /opt/apache-tomcat/webapps/magnoliaPublic/
-sudo rm -f /opt/apache-tomcat/webapps/magnoliaAuthor/WEB-INF/lib/derby-x.jar
-sudo cp /usr/share/java/mysql.jar /opt/apache-tomcat/webapps/magnoliaAuthor/WEB-INF/lib/
-sudo sed -i 's&jdbc:mysql://localhost:3306/magnolia&jdbc:mysql://localhost:3306/magnoliaauthor&g' /opt/apache-tomcat/webapps/magnoliaAuthor/WEB-INF/config/repo-conf/jackrabbit-bundle-mysql-search.xml
-sudo sed -i 's&DataSource name="magnolia"&DataSource name="magnoliaauthor"&g' /opt/apache-tomcat/webapps/magnoliaAuthor/WEB-INF/config/repo-conf/jackrabbit-bundle-mysql-search.xml
-sudo sed -i 's&"dataSourceName" value="magnolia"&"dataSourceName" value="magnoliaauthor"&g' /opt/apache-tomcat/webapps/magnoliaAuthor/WEB-INF/config/repo-conf/jackrabbit-bundle-mysql-search.xml
-sudo sed -i 's&magnolia.repositories.jackrabbit.config=WEB-INF/config/repo-conf/jackrabbit-bundle-h2-search.xml&magnolia.repositories.jackrabbit.config=WEB-INF/config/repo-conf/jackrabbit-bundle-mysql-search.xml&g' /opt/apache-tomcat/webapps/magnoliaAuthor/WEB-INF/config/default/magnolia.properties
+sudo rm -rf /opt/magnolia/apache-tomcat/webapps/magnoliaPublic/
+sudo rm -f /opt/magnolia/apache-tomcat/webapps/magnoliaAuthor/WEB-INF/lib/derby-x.jar
+sudo cp /usr/share/java/mysql.jar /opt/magnolia/apache-tomcat/webapps/magnoliaAuthor/WEB-INF/lib/
+sudo sed -i 's&jdbc:mysql://localhost:3306/magnolia&jdbc:mysql://localhost:3306/magnoliaauthor&g' /opt/magnolia/apache-tomcat/webapps/magnoliaAuthor/WEB-INF/config/repo-conf/jackrabbit-bundle-mysql-search.xml
+sudo sed -i 's&DataSource name="magnolia"&DataSource name="magnoliaauthor"&g' /opt/magnolia/apache-tomcat/webapps/magnoliaAuthor/WEB-INF/config/repo-conf/jackrabbit-bundle-mysql-search.xml
+sudo sed -i 's&"dataSourceName" value="magnolia"&"dataSourceName" value="magnoliaauthor"&g' /opt/magnolia/apache-tomcat/webapps/magnoliaAuthor/WEB-INF/config/repo-conf/jackrabbit-bundle-mysql-search.xml
+sudo sed -i 's&magnolia.repositories.jackrabbit.config=WEB-INF/config/repo-conf/jackrabbit-bundle-h2-search.xml&magnolia.repositories.jackrabbit.config=WEB-INF/config/repo-conf/jackrabbit-bundle-mysql-search.xml&g' /opt/magnolia/apache-tomcat/webapps/magnoliaAuthor/WEB-INF/config/default/magnolia.properties
 
 echo -e "-----------------------------------------------------------------------"
 echo -e "-- Preparing magnolia_control.sh"
 echo -e "-----------------------------------------------------------------------"
-cd /opt/apache-tomcat/bin/
-sudo sed -i "s&# create public webapp&\necho before comment\n: <<'END'\n# create public webapp&g" /opt/apache-tomcat/bin/magnolia_control.sh
-sudo sed -i 's&# to start with jpda&\nEND\necho after comment\n# to start with jpda&g' /opt/apache-tomcat/bin/magnolia_control.sh
-sudo sed -i 's&# exec "$PRGDIR"/catalina.sh jpda start&exec "$PRGDIR"/catalina.sh jpda start&g' /opt/apache-tomcat/bin/magnolia_control.sh
+cd /opt/magnolia/apache-tomcat/bin/
+sudo sed -i "s&# create public webapp&\necho before comment\n: <<'END'\n# create public webapp&g" /opt/magnolia/apache-tomcat/bin/magnolia_control.sh
+sudo sed -i 's&# to start with jpda&\nEND\necho after comment\n# to start with jpda&g' /opt/magnolia/apache-tomcat/bin/magnolia_control.sh
+sudo sed -i 's&# exec "$PRGDIR"/catalina.sh jpda start&exec "$PRGDIR"/catalina.sh jpda start&g' /opt/magnolia/apache-tomcat/bin/magnolia_control.sh
 
 echo -e "-----------------------------------------------------------------------"
 echo -e "-- Starting Magnolia"
@@ -114,9 +114,6 @@ sudo apt-get install -y nginx
 echo -e "-----------------------------------------------------------------------"
 echo -e "-- Configuring Nginx for SSL"
 echo -e "-----------------------------------------------------------------------"
-sudo sed -i 's&# listen 443 ssl default_server;&listen 443 ssl default_server;&g' /etc/nginx/sites-available/default
-sudo sed -i 's&# listen \[::\]:443 ssl default_server;&listen \[::\]:443 ssl default_server;&g' /etc/nginx/sites-available/default
-sudo sed -i 's&# include snippets/snakeoil.conf;&include snippets/snakeoil.conf;&g' /etc/nginx/sites-available/default
 sudo sed -i 's&ssl_certificate /etc/ssl/certs/ssl-cert-snakeoil.pem;&ssl_certificate /etc/ssl/certs/nginx-selfsigned.cert;&g' /etc/nginx/snippets/snakeoil.conf
 sudo sed -i 's&ssl_certificate_key /etc/ssl/private/ssl-cert-snakeoil.key;&ssl_certificate_key /etc/ssl/private/nginx-selfsigned.crt;&g' /etc/nginx/snippets/snakeoil.conf
 
@@ -233,7 +230,7 @@ curl http://localhost/magnoliaAuthor/.rest/nodes/v1/config/modules/publishing-co
 --user superuser:superuser \
 --data \
 '{
-  "properties": [{"name": "url","type": "String","values": ["http://192.168.99.41/magnoliaPublic/"]}]}'
+  "properties": [{"name": "url","type": "String","values": ["http://magnoliapublic/magnoliaPublic/"]}]}'
 
 # END ##########################################################################
 echo -e "-- ---------------- --"
