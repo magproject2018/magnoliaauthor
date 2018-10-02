@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
- 
 # BEGIN ########################################################################
 echo -e "-- ------------------ --\n"
 echo -e "-- BEGIN BOOTSTRAPING --\n"
 echo -e "-- ------------------ --\n"
- 
+
 # BOX ##########################################################################
 echo -e "-----------------------------------------------------------------------"
 echo -e "-- Updating hosts file for our environment"
 echo -e "-----------------------------------------------------------------------"
 sudo sed -i 's&127.0.1.1&192.168.99.40&g' /etc/hosts
 sudo echo "192.168.99.41	magnoliapublic" >> /etc/hosts
+
+
 
 echo -e "-----------------------------------------------------------------------"
 echo -e "-- Updating packages list"
@@ -23,13 +24,13 @@ echo -e "-- Updating Java packages list"
 echo -e "-----------------------------------------------------------------------"
 sudo add-apt-repository ppa:openjdk-r/ppa
 sudo apt-get -y update
- 
+
 echo -e "-----------------------------------------------------------------------"
 echo -e "-- Installing Java"
 echo -e "-----------------------------------------------------------------------"
 sudo apt-get install -y openjdk-9-jre
 sudo apt-get install -y openjdk-9-jdk
- 
+
 # NODE.JS ##########################################################################
 echo -e "-----------------------------------------------------------------------"
 echo -e "-- Installing Node.js"
@@ -44,11 +45,22 @@ echo -e "-- Installing MySQL"
 echo -e "-----------------------------------------------------------------------"
 export DEBIAN_FRONTEND=noninteractive
 sudo -E apt-get -q -y install mysql-server
+
 echo -e "-----------------------------------------------------------------------"
 echo -e "-- Preparing MySQL root user permissions and an empty Magnolia schema"
 echo -e "-----------------------------------------------------------------------"
-sudo mysql -u root -e "drop user 'root'@'localhost';create user 'root'@'%' identified by '';create schema magnolia;grant all privileges on *.* to 'root'@'%' with grant option;flush privileges"
+sudo mysql -u root -e "drop user 'root'@'localhost';create user 'root'@'%' identified by '';create schema magnoliaauthor;grant all privileges on *.* to 'root'@'%' with grant option;flush privileges"
 sudo mysqladmin -u root password password
+
+echo -e "-----------------------------------------------------------------------"
+echo -e "-- Adjusting mysqld.cnf"
+echo -e "-----------------------------------------------------------------------"
+sudo sed -i 's&max_allowed_packet      = 16M&max_allowed_packet      = 32M\nwait_timeout      = 86400\ninteractive_timeout      = 86400&g' /etc/mysql/mysql.conf.d/mysqld.cnf
+
+echo -e "-----------------------------------------------------------------------"
+echo -e "-- Restarting MySQL"
+echo -e "-----------------------------------------------------------------------"
+sudo service mysql restart
 
 echo -e "-----------------------------------------------------------------------"
 echo -e "-- Installing libmysql-java"
@@ -71,15 +83,22 @@ sudo mgnl jumpstart -w magnolia-community-webapp
 echo -e "-----------------------------------------------------------------------"
 echo -e "-- Preparing Magnolia for MySQL Jackrabbit JCR persistence"
 echo -e "-----------------------------------------------------------------------"
+
+sudo rm -rf /opt/apache-tomcat/webapps/magnoliaPublic/
 sudo rm -f /opt/apache-tomcat/webapps/magnoliaAuthor/WEB-INF/lib/derby-x.jar
 sudo cp /usr/share/java/mysql.jar /opt/apache-tomcat/webapps/magnoliaAuthor/WEB-INF/lib/
+sudo sed -i 's&jdbc:mysql://localhost:3306/magnolia&jdbc:mysql://localhost:3306/magnoliaauthor&g' /opt/apache-tomcat/webapps/magnoliaAuthor/WEB-INF/config/repo-conf/jackrabbit-bundle-mysql-search.xml
+sudo sed -i 's&DataSource name="magnolia"&DataSource name="magnoliaauthor"&g' /opt/apache-tomcat/webapps/magnoliaAuthor/WEB-INF/config/repo-conf/jackrabbit-bundle-mysql-search.xml
+sudo sed -i 's&"dataSourceName" value="magnolia"&"dataSourceName" value="magnoliaauthor"&g' /opt/apache-tomcat/webapps/magnoliaAuthor/WEB-INF/config/repo-conf/jackrabbit-bundle-mysql-search.xml
 sudo sed -i 's&magnolia.repositories.jackrabbit.config=WEB-INF/config/repo-conf/jackrabbit-bundle-h2-search.xml&magnolia.repositories.jackrabbit.config=WEB-INF/config/repo-conf/jackrabbit-bundle-mysql-search.xml&g' /opt/apache-tomcat/webapps/magnoliaAuthor/WEB-INF/config/default/magnolia.properties
 
 echo -e "-----------------------------------------------------------------------"
-echo -e "-- Preparing Magnolia for remote Java debugging"
+echo -e "-- Preparing magnolia_control.sh"
 echo -e "-----------------------------------------------------------------------"
 cd /opt/apache-tomcat/bin/
-sudo sed -i 's&# exec "$PRGDIR"/catalina.sh jpda start&exec "$PRGDIR"/catalina.sh jpda start&g' magnolia_control.sh
+sudo sed -i "s&# create public webapp&\necho before comment\n: <<'END'\n# create public webapp&g" /opt/apache-tomcat/bin/magnolia_control.sh
+sudo sed -i 's&# to start with jpda&\nEND\necho after comment\n# to start with jpda&g' /opt/apache-tomcat/bin/magnolia_control.sh
+sudo sed -i 's&# exec "$PRGDIR"/catalina.sh jpda start&exec "$PRGDIR"/catalina.sh jpda start&g' /opt/apache-tomcat/bin/magnolia_control.sh
 
 echo -e "-----------------------------------------------------------------------"
 echo -e "-- Starting Magnolia"
@@ -87,6 +106,7 @@ echo -e "-----------------------------------------------------------------------
 sudo ./magnolia_control.sh start --ignore-open-files-limit
 
 # NGINX #######################################################################
+
 echo -e "-----------------------------------------------------------------------"
 echo -e "-- Creating self-signed SSL cert"
 echo -e "-----------------------------------------------------------------------"
@@ -182,8 +202,8 @@ server {
         #location ~ /\.ht {
         #       deny all;
         #}
-}
 
+}
 
 # Virtual Host configuration for example.com
 #
@@ -211,29 +231,16 @@ echo -e "-- Restarting Nginx"
 echo -e "-----------------------------------------------------------------------"
 sudo systemctl restart nginx
 
-#echo -e "-----------------------------------------------------------------------"
-#echo -e "-- Using Magnolia Nodes REST API to add magnoliaPublic instance receiver"
-#echo -e "-----------------------------------------------------------------------"
-curl http://localhost/magnoliaAuthor/.rest/nodes/v1/config/modules/publishing-core/config/ \
+echo -e "-----------------------------------------------------------------------"
+echo -e "-- Setting Magnolia Receiver to our Public Instance"
+echo -e "-----------------------------------------------------------------------"
+curl http://localhost/magnoliaAuthor/.rest/nodes/v1/config/modules/publishing-core/config/receivers/magnoliaPublic8080/ \
 -H "Content-Type: application/json" \
--X PUT -i \
+-X POST -i \
 --user superuser:superuser \
 --data \
 '{
-  "name": "receivers",
-  "type": "mgnl:contentNode"
-}'
-
-curl http://localhost/magnoliaAuthor/.rest/nodes/v1/config/modules/publishing-core/config/receivers/ \
--H "Content-Type: application/json" \
--X PUT -i \
---user superuser:superuser \
---data \
-'{
-  "name": "magnoliaPublic8080",
-  "type": "mgnl:contentNode",
-  "properties": [{"name": "url","type": "String","values": ["http://192.168.99.41/magnoliaPublic/"]},{"name": "enabled","type": "Boolean","values": ["true"]}]}'
-
+  "properties": [{"name": "url","type": "String","values": ["http://192.168.99.41/magnoliaPublic/"]}]}'
 
 # END ##########################################################################
 echo -e "-- ---------------- --"
