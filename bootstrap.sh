@@ -13,7 +13,7 @@ sudo echo "192.168.99.41	magnoliapublic" >> /etc/hosts
 
 # JAVA #######################################################################
 echo -e "-----------------------------------------------------------------------"
-echo -e "-- Updating Java packages list"
+echo -e "-- Adding Java repository and updating packages list"
 echo -e "-----------------------------------------------------------------------"
 sudo add-apt-repository ppa:openjdk-r/ppa
 sudo apt-get update -y
